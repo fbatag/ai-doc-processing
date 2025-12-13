@@ -12,6 +12,7 @@ gcloud services enable aiplatform.googleapis.com
 gcloud services enable appengine.googleapis.com
 gcloud services enable cloudbuild.googleapis.com # para o Cloud Run
 gcloud services enable iap.googleapis.com 
+gcloud services enable firestore.googleapis.com
 
 gsutil mb -b on -l $REGION $BUCKET_URL
 gsutil lifecycle set bucket_lifecycle.json $BUCKET_URL
@@ -23,5 +24,8 @@ gcloud iam service-accounts create $SERVICE_ACCOUNT_NAME \
 --project $PROJECT_ID
 
 gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:$SERVICE_ACCOUNT --role roles/aiplatform.user
-gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:$SERVICE_ACCOUNT --role roles/aiplatform.user
+gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:$SERVICE_ACCOUNT --role roles/datastore.user
 gcloud storage buckets add-iam-policy-binding $BUCKET_URL --member serviceAccount:$SERVICE_ACCOUNT --role roles/storage.objectUser --project=$PROJECT_ID
+
+gcloud firestore databases create --location=southamerica-east1 --type=firestore-native
+

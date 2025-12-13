@@ -3,11 +3,13 @@ import logging
 import datetime
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from google.cloud import storage
+from google.cloud import firestore
 from google import auth
 credentials, project_id = auth.default()
 from google.oauth2 import service_account
 
 storage_client = storage.Client()
+db = firestore.Client()
 local_cred_file = os.environ.get("HOME") +"/.config/gcloud/gemini-app-sa.json"
 
 print("(RE)LOADING APPLICATION")
@@ -33,13 +35,26 @@ def index():
     print("** MAIN ** ")
     clicked_button = request.form.get('clicked_button', "NOT_FOUND")
     if clicked_button == "delete_doc_btn": 
-        deleteDocFromBucket(request.form["doc_to_delete"])
+        deleteDocFromBucket(request.form["item_to_delete"])
+    elif clicked_button == "delete_task_btn": 
+        deleteTaskAI(request.form["item_to_delete"])
     try:
         docs_files = getDocFilesFromBucket()
-        return render_template('index.html', docs_files=docs_files)
+        ai_tasks = getAiTasks()
+        return render_template('index.html', docs_files=docs_files, ai_tasks=ai_tasks)
     except Exception as e:
         logging.error(f"Error listing blobs: {e}")
         return f"Error listing files: {e}", 500
+
+def getAiTasks():
+    tasks_ref = db.collection(u'ai_tasks')
+    docs = tasks_ref.stream()
+    tasks = []
+    for doc in docs:
+        task = doc.to_dict()
+        task['task_name'] = doc.id
+        tasks.append(task)
+    return tasks
 
 def getDocFilesFromBucket():
     blobs = docs_bucket.list_blobs()
@@ -62,6 +77,14 @@ def deleteDocFromBucket(doc_to_delete):
         blob.delete()
     except Exception as e:
         print(f"Error deleting object '{doc_to_delete}': {e}")
+
+def deleteTaskAI(task_to_delete):
+    print("METHOD: deleteTaskAI")
+    try:
+        db.collection(u'ai_tasks').document(task_to_delete).delete()
+        print("Deleting " + task_to_delete)
+    except Exception as e:
+        print(f"Error deleting task '{task_to_delete}': {e}")
 
 @app.route("/getSignedUrl", methods=["GET"])
 def getSignedUrl():
