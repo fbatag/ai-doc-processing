@@ -7,7 +7,7 @@
     <title>Analisar Documentos com Google GenIA</title>
 </head>
 <body>
-    <h1>Upload PDF to Google Cloud Storage</h1>
+    <h1>Analisar Documentos com Google GenIA</h1>
     
     <form id="load_Form" method="POST" action="/" enctype="multipart/form-data">
     <div class="upload-section">
@@ -22,11 +22,12 @@
     <table class="file-list" id="doc_lst">
         <thead>
             <tr>
+                <th>S</th>
                 <th>Nome</th>
                 <th>Bytes</th>
                 <th>Tipo</th>
                 <th>Atualizado</th>
-                <th>Remover</th>
+                <th>R</th>
             </tr>
         </thead>
         <tbody>
@@ -37,9 +38,9 @@
                         style="width: 20px; height: 20px; object-fit: cover;">
                 </td>
                 <td>{{ docs_file.name }}</td>
-                <td>{{ docs_file.size }}</td>
-                <td>{{ docs_file.content_type }}</td>
-                <td>{{ docs_file.updated }}</td>
+                <td style="text-align: right;">{{ docs_file.size }}</td>
+                <td style="text-align: center;">{{ docs_file.content_type }}</td>
+                <td style="text-align: center;">{{ docs_file.updated.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                 <td style="text-align: center; height: 16px; width: 16px">
                     <img class="delete-icon" src="static/trash-bin.png"
                         style="width: 20px; height: 20px; object-fit: cover;" value="{{ loop.index }}">

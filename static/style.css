@@ -237,3 +237,14 @@ thead {
 tfoot {
   border-top: 1px solid black;
 }
+
+#doc_lst {
+  background-color: white;
+  width: 100%;
+  border: 1px solid black;
+}
+
+#doc_lst th, #doc_lst td {
+  border: 1px solid black;
+  padding: 5px;
+}
