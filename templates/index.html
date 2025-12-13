@@ -1,62 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GCS PDF Upload</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            line-height: 1.6;
-        }
-        h1, h2 {
-            color: #333;
-        }
-        .upload-section {
-            background: #f9f9f9;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 30px;
-            border: 1px solid #ddd;
-        }
-        .file-list {
-            border-collapse: collapse;
-            width: 100%;
-        }
-        .file-list th, .file-list td {
-            border: 1px solid #ddd;
-            padding: 12px;
-            text-align: left;
-        }
-        .file-list th {
-            background-color: #f2f2f2;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        button:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-        #status {
-            margin-top: 10px;
-            font-weight: bold;
-        }
-        .success { color: green; }
-        .error { color: red; }
-    </style>
+    <title>Analisar Documentos com Google GenIA</title>
 </head>
 <body>
     <h1>Upload PDF to Google Cloud Storage</h1>
@@ -64,60 +12,68 @@
     <form id="load_Form" method="POST" action="/" enctype="multipart/form-data">
     <div class="upload-section">
         <h2>Select PDF File</h2>
-        //<input type="hidden" id="clicked_button" name="clicked_button" value="">
-        <input type="submit" id="upload_doc_btn" name="upload_doc_btn" value="Carregar documento">
+        <input type="submit" id="upload_doc_btn" name="upload_doc_btn" value="Carregar documento" class="btn-file">
+        <input type="hidden" id="clicked_button" name="clicked_button" value="">
+        <input type="hidden" id="doc_to_delete" name="doc_to_delete" value="">
     </div>
 
     <h2>Uploaded Files</h2>
-    <p>Bucket: <strong>{{ bucket_name }}</strong></p>
-    
-    {% if files %}
-    <table class="file-list">
+    {% if docs_files|length > 0 %}
+    <table class="file-list" id="doc_lst">
         <thead>
             <tr>
-                <th>Name</th>
-                <th>Size (bytes)</th>
-                <th>Type</th>
-                <th>Last Updated</th>
+                <th>Nome</th>
+                <th>Bytes</th>
+                <th>Tipo</th>
+                <th>Atualizado</th>
+                <th>Remover</th>
             </tr>
         </thead>
         <tbody>
-            {% for file in files %}
+            {% for docs_file in docs_files %}
             <tr>
-                <td>{{ file.name }}</td>
-                <td>{{ file.size }}</td>
-                <td>{{ file.content_type }}</td>
-                <td>{{ file.updated }}</td>
+                <td style="text-align: center; height: 16px; width: 16px">
+                    <img class="check-icon" src="static/check_circle.png"
+                        style="width: 20px; height: 20px; object-fit: cover;">
+                </td>
+                <td>{{ docs_file.name }}</td>
+                <td>{{ docs_file.size }}</td>
+                <td>{{ docs_file.content_type }}</td>
+                <td>{{ docs_file.updated }}</td>
+                <td style="text-align: center; height: 16px; width: 16px">
+                    <img class="delete-icon" src="static/trash-bin.png"
+                        style="width: 20px; height: 20px; object-fit: cover;" value="{{ loop.index }}">
+                </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
     {% else %}
-    <p>No files found in the bucket.</p>
+                <p id="context_message" style="font-weight: bold;">
+                    Nenhum documento encontrado. Use os botão Carregar documento acima para carregar um documento pro sistema.</p>
     {% endif %}
 
     </form>
     <script src="{{ url_for('static', filename='upload.js') }}"></script>
     <script>
         const load_Form = document.getElementById("load_Form");
-        //const clicked_button = document.getElementById("clicked_button");
+        const clicked_button = document.getElementById("clicked_button");
 
-        const load_context_file = document.createElement("input");
-        load_context_file.type = "file";
-        load_context_file.name = "load_context_file";
-        load_context_file.id = "load_context_file";
-        load_context_file.accept = "text/plain,application/pdf,image/jpeg,image/png";
-        load_context_file.style.display = "none";
-        load_Form.appendChild(load_context_file);
-        load_context_file.addEventListener("change", function () {
+        const load_doc_file = document.createElement("input");
+        load_doc_file.type = "file";
+        load_doc_file.name = "load_doc_file";
+        load_doc_file.id = "load_doc_file";
+        load_doc_file.accept = "text/plain,application/pdf,image/jpeg,image/png";
+        load_doc_file.style.display = "none";
+        load_Form.appendChild(load_doc_file);
+        load_doc_file.addEventListener("change", function () {
             if (this.files.length > 0) {
-                console.log(load_context_file.files[0]);
-                clicked_button.value = "upload_context_btn";
-                //ShowLoadingMessage("Carregando o arquivo \"" + this.files[0].name + "\" para o projeto \"" + projects_slc.value + "\".  AGUARDE ... ");
-                UploadWithSignedUrl("context", projects_slc.value, this.files[0], (error, response) => {
+                console.log(load_doc_file.files[0]);
+                //ShowLoadingMessage("Carregando o arquivo \"" + this.files[0].name "\".  AGUARDE ... ");
+                UploadWithSignedUrl(this.files[0], (error, response) => {
                     if (error)
                         alert(error);
-                    fileElem = document.getElementById('load_context_file');
+                    fileElem = document.getElementById('load_doc_file');
                     if (fileElem != null) {
                         //alert('** REMOVENDO ** fileElem')
                         fileElem.remove();
@@ -131,7 +87,7 @@
             event.preventDefault();
             clicked_button.value = event.submitter.name
             if (event.submitter.name == "upload_doc_btn") {
-                 load_context_file.click();
+                 load_doc_file.click();
             }
             else if (event.submitter.name == "ctx_test_btn") {
                 console.log("TESTE");
@@ -141,7 +97,22 @@
                 load_Form.submit();
             }
         });
-        
+
+        const doc_lst = document.getElementById("doc_lst");
+        // Deleta o arquivo de contexto buja lata de lixo foi clicada
+        if (doc_lst != null) {
+            doc_lst.addEventListener("click", function (event) {
+                if (event.target.classList.contains("delete-icon")) {
+                    const table_line = event.target.parentElement.parentElement;
+                    const docName = table_line.cells[1].textContent;
+                    response = confirm("Tem certeza que deseja deletar o documento \"" + docName + "\"?");
+                    if (!response) return;
+                    clicked_button.value = "delete_doc_btn";
+                    document.getElementById("doc_to_delete").value = docName;
+                    load_Form.submit();
+                }
+            });
+        }
     </script>
 </body>
 </html>

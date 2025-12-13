@@ -89,12 +89,22 @@ body {
     cursor: pointer;
   }
 
-  .btn-file {
+  .btn-ctrl {
     background-color: blue;
     color: white;
     padding: 10px 20px;
     border: none;
     border: 2px solid darkblue;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  .btn-file {
+    background-color: green;
+    color: white;
+    padding: 5px 20px;
+    border: none;
+    border: 2px solid darkgreen;
     border-radius: 5px;
     cursor: pointer;
   }

@@ -20,52 +20,66 @@ logging.basicConfig(level=logging.INFO)
 
 SERVICE_NAME = os.environ.get("SERVICE_NAME", "ai-doc-processing")
 BUCKET_NAME = os.environ.get("BUCKET_NAME", f"{SERVICE_NAME}-{storage_client.project}")
-bucket = storage_client.bucket(BUCKET_NAME)
+docs_bucket = storage_client.bucket(BUCKET_NAME)
+if not docs_bucket:
+    raise Exception(f"Erro: {BUCKET_NAME} bucket não encontrado")
 
-@app.route('/')
+docs_files = []
+
+@app.route("/", methods=["GET", "POST"])
 def index():
-    if not bucket:
-        return f"Erro: {BUCKET_NAME} bucket  não encontrado", 500
+    global docs_files
 
+    print("** MAIN ** ")
+    clicked_button = request.form.get('clicked_button', "NOT_FOUND")
+    if clicked_button == "delete_doc_btn": 
+        deleteDocFromBucket(request.form["doc_to_delete"])
     try:
-        blobs = bucket.list_blobs()
-        
-        files = []
-        for blob in blobs:
-            files.append({
+        docs_files = getDocFilesFromBucket()
+        return render_template('index.html', docs_files=docs_files)
+    except Exception as e:
+        logging.error(f"Error listing blobs: {e}")
+        return f"Error listing files: {e}", 500
+
+def getDocFilesFromBucket():
+    blobs = docs_bucket.list_blobs()
+    files = []
+    for blob in blobs:
+        files.append({
                 'name': blob.name,
                 'url': blob.public_url,
                 'content_type': blob.content_type,
                 'size': blob.size,
                 'updated': blob.updated
             })
-            
-        return render_template('index.html', files=files, bucket_name=BUCKET_NAME)
+    return files
+
+def deleteDocFromBucket(doc_to_delete):
+    print("METHOD: deleteDocFromBucket")
+    try:
+        blob = docs_bucket.blob(doc_to_delete)
+        print("Deleting " + doc_to_delete)
+        blob.delete()
     except Exception as e:
-        logging.error(f"Error listing blobs: {e}")
-        return f"Error listing files: {e}", 500
+        print(f"Error deleting object '{doc_to_delete}': {e}")
 
 @app.route("/getSignedUrl", methods=["GET"])
 def getSignedUrl():
     print("METHOD: getSignedUrl")
-    print(request.args)
-    dest_bucket = request.args.get("dest_bucket")
     object_destination = request.args.get("object_destination")
     filetype = request.args.get("filetype")
-    if dest_bucket == "code":
-        return getSignedUrlParam(codeBucket, object_destination, filetype)
-    return getSignedUrlParam(contextsBucket, object_destination, filetype)
+    return getSignedUrlParam(docs_bucket, object_destination, filetype)
 
 def getSignedUrlParam(dest_bucket, object_destination, filetype):
     blob = dest_bucket.blob(object_destination)
     expiration=datetime.timedelta(minutes=15)
 
     print('Content-Type: '+  filetype)
-    if request.url_root == 'http://127.0.0.1:5000/':
+    if request.url_root == 'http://127.0.0.1:8080/':
         print("RUNNING LOCAL")
+        local_credentials=service_account.Credentials.from_service_account_file(local_cred_file)
         signeUrl = blob.generate_signed_url(method='PUT', version="v4", expiration=expiration, content_type=filetype, 
-                                    credentials=service_account.Credentials.from_service_account_file(local_cred_file),
-                                    #credentials=credentials,
+                                    credentials=local_credentials, #credentials=credentials,
                                     headers={"X-Goog-Content-Length-Range": "1,5000000000", 'Content-Type': filetype})
     else:
         print("CREDENTIALS")
@@ -78,7 +92,7 @@ def getSignedUrlParam(dest_bucket, object_destination, filetype):
                                     headers={"X-Goog-Content-Length-Range": "1,5000000000", 'Content-Type': filetype})
         #except Exception as e:
         #    print(e)
-    #print(signeUrl)
+    print(signeUrl)
     return signeUrl
 
 if __name__ == "__main__":
