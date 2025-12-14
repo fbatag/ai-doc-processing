@@ -8,15 +8,29 @@
 </head>
 <body>
     <h1>Analisar Documentos com Google GenIA</h1>
-    
     <form id="load_Form" method="POST" action="/" enctype="multipart/form-data">
+    {% if msg_processing %}
+        <br><h3>{{msg_processing|safe}}</h3>
+        <input type="hidden" id="clicked_button" name="clicked_button" value="result_execute_task_btn">
+        <input type="hidden" id="selected_item" name="selected_item" value="{{selected_item}}">
+    {% else %}
+    
         <input type="hidden" id="clicked_button" name="clicked_button" value="">
         <input type="hidden" id="selected_item" name="selected_item" value="">
 
     {% if selected_doc %}
         <!--input type="hidden" id="selected_item" name="selected_item" value="{{ selected_doc.name }}"-->
         <input type="submit" id="return_btn" name="return_btn" value="Retornar" class="btn-ctrl">
-        <h2>Documento a processar: {{ selected_doc.name }}</h2>
+        {% if task_result %}
+            <h3>Resposta do modelo: <span style="color: black;">{{choosen_model_name}}</span> Tarefa: <span style="color: black;">{{executed_task_name}}</span></h3>
+            <div style="flex: 1; overflow-x: auto;">
+                <pre class="api-result" style="white-space: pre-wrap; word-wrap: break-word; background-color: white; color: black;">
+                <br>{{ task_result }}
+                </pre>
+            </div>
+        {% endif %}
+        <br>
+        <h2>Documento: {{ selected_doc.name }}</h2>
         <div id="image-container" style="margin-top: 20px; border: 1px solid #ddd; padding: 10px; background-color: #f9f9f9;">
             {% if 'image' in selected_doc.content_type %}
                 <img src="{{ selected_doc.url }}" alt="{{ selected_doc.name }}" style="max-width: 100%; max-height: 800px; display: block; margin: 0 auto;">
@@ -70,12 +84,14 @@
     {% endif %}
     {% if selected_doc %}
         <h2>Selecione uma tarefa de IA</h2>
-            <label style="color: white; font-weight: bold;" for="slc_model_name">Modelo:</label>&nbsp;&nbsp;
+            <label style="color: white; font-weight: bold;" for="slc_model_name">Modelo:</label>
+            <br>
             <select id="slc_model_name" name="slc_model_name">
+                <option value="gemini-2.5-flash-lite">Gemini-2.5-flash-lite</option>
                 <option value="gemini-2.5-flash">Gemini-2.5-flash</option>
                 <option value="gemini-2.5-pro">Gemini-2.5-pro</option>
+                <option value="gemini-3-pro-preview">Gemini-3-pro-preview</option>
             </select>
-            <input type="hidden" id="choosen_model_name" name="choosen_model_name" value="{{ choosen_model_name }}">
     {% else %}
         <h2>Tarefas IA Cadastradas</h2>
     {% endif %}
@@ -118,6 +134,22 @@
     {% else %}
         <p>Nenhuma tarefa encontrada.</p>
     {% endif %}
+    <br><br>
+    {% if task_name %}
+        <h2>{{task_name}}</h2>
+        <div style="flex: 1; overflow-x: auto;">
+            <pre class="api-result" style="white-space: pre-wrap; word-wrap: break-word; background-color: white; color: black;">
+            <br>{{ command }}
+            </pre>
+        </div>
+        <div style="flex: 1; overflow-x: auto;">
+            <pre class="api-result" style="white-space: pre-wrap; word-wrap: break-word; background-color: white; color: black;">
+            <br>{{ str_output }}
+            </pre>
+        </div>
+    {% endif %}
+    {% endif %}
+
     </form>
 
     <script src="{{ url_for('static', filename='upload.js') }}"></script>
@@ -203,17 +235,33 @@
             });
         }    
 
-        var choosenModel = document.getElementById("choosen_model_name");
-        if (choosenModel != null && choosenModel.value != "") {
-            console.log("MODEL NAME: " + choosenModel.value);
+        var choosenModel = "{{ choosen_model_name }}";
+        if (choosenModel != null && choosenModel != "") {
+            console.log("MODEL NAME: " + choosenModel);
             const selectElement = document.querySelector("select[name=slc_model_name]");
             for (const option of selectElement.options) {
-                if (option.value === choosenModel.value) {
+                if (option.value === choosenModel) {
                     option.selected = true;
                     break;
                 }
             }
         }
+
+        var msg_processing = "{{ msg_processing }}";
+        if (msg_processing != null && msg_processing != "") {
+            console.log("clicked_button.value ? result_execute_task_btn")
+            console.log(clicked_button.value)
+            load_Form.submit();
+        }
+        function onFormLoaded() {
+            console.log("clicked_button.value ? result_execute_task_btn")
+            console.log(clicked_button.value)
+            if (clicked_button.value == "result_execute_task_btn")
+            {
+                //load_Form.submit();
+            }
+        }
+        
     </script>
 </body>
 </html>
