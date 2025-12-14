@@ -142,6 +142,7 @@ def getSignedDownloadUrl(blob):
         local_credentials = service_account.Credentials.from_service_account_file(local_cred_file)
         return blob.generate_signed_url(method='GET', version="v4", expiration=expiration, credentials=local_credentials)
     else:
+        print("getSignedDownloadUrl with CREDENTIALS")
         credentials.refresh(auth.transport.requests.Request())
         return blob.generate_signed_url(method='GET', version="v4", expiration=expiration, service_account_email=credentials.service_account_email, access_token=credentials.token)
 
@@ -164,7 +165,7 @@ def getSignedUrlParam(dest_bucket, object_destination, filetype):
                                     credentials=local_credentials, #credentials=credentials,
                                     headers={"X-Goog-Content-Length-Range": "1,5000000000", 'Content-Type': filetype})
     else:
-        print("CREDENTIALS")
+        print("getSignedUrlParam with CREDENTIALS")
         print(credentials.service_account_email)
         #if credentials.token is None:
         credentials.refresh(auth.transport.requests.Request())

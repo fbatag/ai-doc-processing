@@ -28,6 +28,7 @@ gcloud iam service-accounts create $SERVICE_ACCOUNT_NAME \
 
 gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:$SERVICE_ACCOUNT --role roles/aiplatform.user
 gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:$SERVICE_ACCOUNT --role roles/datastore.user
+gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:$SERVICE_ACCOUNT --role roles/run.serviceAgent
 gcloud storage buckets add-iam-policy-binding $BUCKET_URL --member serviceAccount:$SERVICE_ACCOUNT --role roles/storage.objectUser --project=$PROJECT_ID
 gcloud storage buckets add-iam-policy-binding $BUCKET_URL --member serviceAccount:$GENAI_SA --role roles/storage.objectUser --project=$PROJECT_ID
 
@@ -37,3 +38,12 @@ python3 -m venv menv
 source menv/bin/activate
 pip install -r requirements.txt
 python3 populate_tasks.py
+
+gcloud services enable run.googleapis.com
+export SA_DEPLOY=$PROJECT_NUMBER-compute@developer.gserviceaccount.com 
+gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:$SA_DEPLOY --role roles/storage.objectUser 
+gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:$SA_DEPLOY --role roles/logging.logWriter
+gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:$SA_DEPLOY --role roles/cloudbuild.builds.editor
+gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:$SA_DEPLOY --role roles/run.builder
+
+gcloud run deploy $SERVICE_NAME --source . --region $REGION --service-account $SERVICE_ACCOUNT --allow-unauthenticated
