@@ -70,6 +70,12 @@
     {% endif %}
     {% if selected_doc %}
         <h2>Selecione uma tarefa de IA</h2>
+            <label style="color: white; font-weight: bold;" for="slc_model_name">Modelo:</label>&nbsp;&nbsp;
+            <select id="slc_model_name" name="slc_model_name">
+                <option value="gemini-2.5-flash">Gemini-2.5-flash</option>
+                <option value="gemini-2.5-pro">Gemini-2.5-pro</option>
+            </select>
+            <input type="hidden" id="choosen_model_name" name="choosen_model_name" value="{{ choosen_model_name }}">
     {% else %}
         <h2>Tarefas IA Cadastradas</h2>
     {% endif %}
@@ -175,25 +181,39 @@
                     load_Form.submit();
             });
         }
+        const slc_model_name = document.getElementById("slc_model_name");
         const ai_task_lst = document.getElementById("ai_task_lst");
         // Deleta o arquivo de contexto buja lata de lixo foi clicada
         if (ai_task_lst != null) {
             ai_task_lst.addEventListener("click", function (event) {
                 const table_line = event.target.parentElement.parentElement;
-                const docName = table_line.cells[0].textContent;
-                document.getElementById("selected_item").value = docName;
+                const taskName = table_line.cells[0].textContent;
+                document.getElementById("selected_item").value = taskName;
                 if (event.target.classList.contains("check-icon")) {
                     clicked_button.value = "execute_task_btn";
+                    document.getElementById("selected_item").value = slc_model_name.value + ";" + taskName + ";{{ selected_doc.name }}"
                 } else if (event.target.classList.contains("visual-icon")) {
                     clicked_button.value = "visualize_task_btn";
                 } else if(event.target.classList.contains("delete-icon")) {
-                    response = confirm("Tem certeza que deseja deletar o documento \"" + docName + "\"?");
+                    response = confirm("Tem certeza que deseja deletar a tarefa \"" + taskName + "\"?");
                     if (!response) return;
                     clicked_button.value = "delete_task_btn";
                 }
                 load_Form.submit();
             });
         }    
+
+        var choosenModel = document.getElementById("choosen_model_name");
+        if (choosenModel != null && choosenModel.value != "") {
+            console.log("MODEL NAME: " + choosenModel.value);
+            const selectElement = document.querySelector("select[name=slc_model_name]");
+            for (const option of selectElement.options) {
+                if (option.value === choosenModel.value) {
+                    option.selected = true;
+                    break;
+                }
+            }
+        }
     </script>
 </body>
 </html>

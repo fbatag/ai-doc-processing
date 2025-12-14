@@ -7,11 +7,19 @@ from google.cloud import firestore
 from google import auth
 credentials, project_id = auth.default()
 from google.oauth2 import service_account
+from google import genai
+from google.genai import types
+
 
 storage_client = storage.Client()
 db = firestore.Client()
 local_cred_file = os.environ.get("HOME") +"/.config/gcloud/gemini-app-sa.json"
 
+genai_client = genai.Client(
+      vertexai=True,
+      project=storage_client.project,
+      location="global"
+)
 print("(RE)LOADING APPLICATION")
 app = Flask(__name__)
 
@@ -26,32 +34,31 @@ docs_bucket = storage_client.bucket(BUCKET_NAME)
 if not docs_bucket:
     raise Exception(f"Erro: {BUCKET_NAME} bucket não encontrado")
 
-#docs_files = []
-
 @app.route("/", methods=["GET", "POST"])
 def index():
-    #global docs_files
     print("** MAIN ** ")
-    clicked_button = request.form.get('clicked_button', "NOT_FOUND")
-    print("clicked_button: " + clicked_button)
-    selected_doc = None
-    if clicked_button == "select_doc_btn": 
-        selected_doc = geSelectedDoc(request.form.get("selected_item",""))
-    elif clicked_button == "delete_doc_btn": 
-        deleteDocFromBucket(request.form.get("selected_item",""))
-    elif clicked_button == "delete_task_btn": 
-        deleteTaskAI(request.form.get("selected_item",""))
     try:
-        docs_files = getDocFilesFromBucket()
-        ai_tasks = getAiTasks()
-        print("** RENDER ** ")
-        return render_template('index.html', docs_files=docs_files, ai_tasks=ai_tasks, selected_doc=selected_doc)
+        clicked_button = request.form.get('clicked_button', "NOT_FOUND")
+        print("clicked_button: " + clicked_button)
+        selected_doc = None
+        selected_item = request.form.get("selected_item","")
+        if clicked_button == "select_doc_btn": 
+            return render_template('index.html', ai_tasks=getAiTasks(), selected_doc=geSelectedDoc(selected_item))
+        elif clicked_button == "execute_task_btn":
+            model_name, task_name, selected_doc = selected_item.split(";")
+            task_result = executeAITask(model_name, task_name, selected_doc)
+            return render_template('index.html', ai_tasks=getAiTasks(), selected_doc=selected_doc, task_result=task_result, mode_name=model_name)
+        elif clicked_button == "delete_doc_btn":
+            deleteDocFromBucket(selected_item)
+        elif clicked_button == "delete_task_btn": 
+            deleteTaskAI(selected_item)
+        return render_template('index.html', docs_files=getDocFiles(), ai_tasks=getAiTasks(), selected_doc=selected_doc)
     except Exception as e:
         logging.error(f"Error listing blobs: {e}")
         return f"Error listing files: {e}", 500
 
 def geSelectedDoc(selected_doc_name):
-    print("METHOD: getDocFilesFromBucket: " + selected_doc_name)
+    print("METHOD: getDocFiles: " + selected_doc_name)
     if selected_doc_name == "": return
     sel_blob = docs_bucket.get_blob(selected_doc_name)
     if sel_blob:
@@ -73,8 +80,8 @@ def getAiTasks():
         tasks.append(task)
     return tasks
 
-def getDocFilesFromBucket():
-    print("METHOD: getDocFilesFromBucket")
+def getDocFiles():
+    print("METHOD: getDocFiles")
     blobs = docs_bucket.list_blobs()
     files = []
     for blob in blobs:
@@ -148,6 +155,61 @@ def getSignedUrlParam(dest_bucket, object_destination, filetype):
         #    print(e)
     print(signeUrl)
     return signeUrl
+
+
+def executeAITask(model_name, task_name, selected_doc):
+    print(f"METHOD: executeAITask: {model_name} - {task_name} - {selected_doc}")   
+    blob = docs_bucket.blob(selected_doc)
+    ai_task = db.collection(u'ai_tasks').document(task_name).get()
+    command = ""
+    str_output = ""
+    if ai_task.exists:
+        data = ai_task.to_dict()
+        command = data.get('command')
+        str_output = data.get('str_output')
+        print(f"Command: {command}")
+        print(f"str_output: {str_output}")
+
+    return call_gemini(model_name, command, [blob], "application/json", str_output)
+
+
+def call_gemini(
+      model: str,
+      system_instructions: str,
+      blob_docs: list = None,
+      response_mime_type: str = None,
+      response_schema: dict = None
+) -> str:
+
+  parts = [types.Part.from_text(text="Conteúdo:")]
+  if blob_docs:
+    # pdfs is expected to be a list of tuples: [(mime_type, data), ...]
+    doc_parts = [types.Part.from_uri(mime_type=blob_doc.mime, file_uri=blob_doc.y) for blob_doc, data in blob_docs]
+    parts.extend(doc_parts)
+  parts.append(types.Part.from_text(text="Resultado:"))
+
+  contents = [
+    types.Content(
+      role="user",
+      parts=parts
+    )
+  ]
+  generate_content_config = types.GenerateContentConfig(
+    temperature = 0.1,
+    top_p = 0.95,
+    max_output_tokens = 65535,
+    response_modalities = ["TEXT"],
+    response_mime_type = response_mime_type,
+    response_schema = response_schema,
+    system_instruction=[types.Part.from_text(text=system_instructions)],
+  )
+
+  response = genai_client.models.generate_content(
+     model = model,
+     contents = contents,
+     config = generate_content_config)
+
+  return response.text
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
