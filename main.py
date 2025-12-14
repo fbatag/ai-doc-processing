@@ -26,27 +26,44 @@ docs_bucket = storage_client.bucket(BUCKET_NAME)
 if not docs_bucket:
     raise Exception(f"Erro: {BUCKET_NAME} bucket não encontrado")
 
-docs_files = []
+#docs_files = []
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    global docs_files
-
+    #global docs_files
     print("** MAIN ** ")
     clicked_button = request.form.get('clicked_button', "NOT_FOUND")
-    if clicked_button == "delete_doc_btn": 
-        deleteDocFromBucket(request.form["item_to_delete"])
+    print("clicked_button: " + clicked_button)
+    selected_doc = None
+    if clicked_button == "select_doc_btn": 
+        selected_doc = geSelectedDoc(request.form.get("selected_item",""))
+    elif clicked_button == "delete_doc_btn": 
+        deleteDocFromBucket(request.form.get("selected_item",""))
     elif clicked_button == "delete_task_btn": 
-        deleteTaskAI(request.form["item_to_delete"])
+        deleteTaskAI(request.form.get("selected_item",""))
     try:
         docs_files = getDocFilesFromBucket()
         ai_tasks = getAiTasks()
-        return render_template('index.html', docs_files=docs_files, ai_tasks=ai_tasks)
+        print("** RENDER ** ")
+        return render_template('index.html', docs_files=docs_files, ai_tasks=ai_tasks, selected_doc=selected_doc)
     except Exception as e:
         logging.error(f"Error listing blobs: {e}")
         return f"Error listing files: {e}", 500
 
+def geSelectedDoc(selected_doc_name):
+    print("METHOD: getDocFilesFromBucket: " + selected_doc_name)
+    if selected_doc_name == "": return
+    sel_blob = docs_bucket.get_blob(selected_doc_name)
+    if sel_blob:
+        selected_doc = {
+                'name': sel_blob.name,
+                'content_type': sel_blob.content_type,
+                'url': getSignedDownloadUrl(sel_blob)
+            }
+    return selected_doc
+
 def getAiTasks():
+    print("METHOD: getAiTasks")
     tasks_ref = db.collection(u'ai_tasks')
     docs = tasks_ref.stream()
     tasks = []
@@ -57,6 +74,7 @@ def getAiTasks():
     return tasks
 
 def getDocFilesFromBucket():
+    print("METHOD: getDocFilesFromBucket")
     blobs = docs_bucket.list_blobs()
     files = []
     for blob in blobs:
@@ -70,7 +88,8 @@ def getDocFilesFromBucket():
     return files
 
 def deleteDocFromBucket(doc_to_delete):
-    print("METHOD: deleteDocFromBucket")
+    print("METHOD: deleteDocFromBucket: " + doc_to_delete)
+    if doc_to_delete == "": return
     try:
         blob = docs_bucket.blob(doc_to_delete)
         print("Deleting " + doc_to_delete)
@@ -79,17 +98,29 @@ def deleteDocFromBucket(doc_to_delete):
         print(f"Error deleting object '{doc_to_delete}': {e}")
 
 def deleteTaskAI(task_to_delete):
-    print("METHOD: deleteTaskAI")
+    print("METHOD: deleteTaskAI: " + task_to_delete)
+    if  task_to_delete == "": return
     try:
         db.collection(u'ai_tasks').document(task_to_delete).delete()
         print("Deleting " + task_to_delete)
     except Exception as e:
         print(f"Error deleting task '{task_to_delete}': {e}")
 
+def getSignedDownloadUrl(blob):
+    print("METHOD: getSignedDownloadUrl: " + blob.name)
+    expiration = datetime.timedelta(minutes=15)
+    if request.url_root == 'http://127.0.0.1:8080/':
+        print("RUNNING LOCAL: getSignedDownloadUrl")
+        local_credentials = service_account.Credentials.from_service_account_file(local_cred_file)
+        return blob.generate_signed_url(method='GET', version="v4", expiration=expiration, credentials=local_credentials)
+    else:
+        credentials.refresh(auth.transport.requests.Request())
+        return blob.generate_signed_url(method='GET', version="v4", expiration=expiration, service_account_email=credentials.service_account_email, access_token=credentials.token)
+
 @app.route("/getSignedUrl", methods=["GET"])
 def getSignedUrl():
-    print("METHOD: getSignedUrl")
     object_destination = request.args.get("object_destination")
+    print("METHOD: getSignedUrl: " + object_destination)
     filetype = request.args.get("filetype")
     return getSignedUrlParam(docs_bucket, object_destination, filetype)
 
@@ -99,7 +130,7 @@ def getSignedUrlParam(dest_bucket, object_destination, filetype):
 
     print('Content-Type: '+  filetype)
     if request.url_root == 'http://127.0.0.1:8080/':
-        print("RUNNING LOCAL")
+        print("RUNNING LOCAL: getSignedUrlParam")
         local_credentials=service_account.Credentials.from_service_account_file(local_cred_file)
         signeUrl = blob.generate_signed_url(method='PUT', version="v4", expiration=expiration, content_type=filetype, 
                                     credentials=local_credentials, #credentials=credentials,

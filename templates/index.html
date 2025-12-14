@@ -10,64 +10,92 @@
     <h1>Analisar Documentos com Google GenIA</h1>
     
     <form id="load_Form" method="POST" action="/" enctype="multipart/form-data">
-    <div class="upload-section">
-        <h2>Select PDF File</h2>
-        <input type="submit" id="upload_doc_btn" name="upload_doc_btn" value="Carregar documento" class="btn-file">
         <input type="hidden" id="clicked_button" name="clicked_button" value="">
-        <input type="hidden" id="item_to_delete" name="item_to_delete" value="">
-    </div>
+        <input type="hidden" id="selected_item" name="selected_item" value="">
 
-    <h2>Documentos carregados</h2>
-    {% if docs_files|length > 0 %}
-    <table class="file-list" id="doc_lst">
-        <thead>
-            <tr>
-                <th>Nome</th>
-                <th>Bytes</th>
-                <th>Tipo</th>
-                <th>Atualizado</th>
-                <th>Sel</th>
-                <th>Rem</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for docs_file in docs_files %}
-            <tr>
-                <td>{{ docs_file.name }}</td>
-                <td style="text-align: right;">{{ docs_file.size }}</td>
-                <td style="text-align: center;">{{ docs_file.content_type }}</td>
-                <td style="text-align: center;">{{ docs_file.updated.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                <td style="text-align: center; height: 16px; width: 16px">
-                    <img class="check-icon" src="static/check_circle.png"
-                        style="width: 20px; height: 20px; object-fit: cover;">
-                </td>
-                <td style="text-align: center; height: 16px; width: 16px">
-                    <img class="delete-icon" src="static/trash-bin.png"
-                        style="width: 20px; height: 20px; object-fit: cover;" value="{{ loop.index }}">
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    {% if selected_doc %}
+        <!--input type="hidden" id="selected_item" name="selected_item" value="{{ selected_doc.name }}"-->
+        <input type="submit" id="return_btn" name="return_btn" value="Retornar" class="btn-ctrl">
+        <h2>Documento a processar: {{ selected_doc.name }}</h2>
+        <div id="image-container" style="margin-top: 20px; border: 1px solid #ddd; padding: 10px; background-color: #f9f9f9;">
+            {% if 'image' in selected_doc.content_type %}
+                <img src="{{ selected_doc.url }}" alt="{{ selected_doc.name }}" style="max-width: 100%; max-height: 800px; display: block; margin: 0 auto;">
+            {% elif 'pdf' in selected_doc.content_type %}
+                <embed src="{{ selected_doc.url }}" type="application/pdf" width="100%" height="800px" />
+            {% else %}
+                <p>Pré-visualização não disponível para este tipo de arquivo: {{ selected_doc.content_type }}</p>
+                <p><a href="{{ selected_doc.url }}" target="_blank">Baixar Arquivo</a></p>
+            {% endif %}
+        </div>
     {% else %}
+        <div class="upload-section">
+            <input type="submit" id="upload_doc_btn" name="upload_doc_btn" value="Carregar documento" class="btn-file">
+        </div>
+        <h2>Documentos carregados</h2>
+        {% if docs_files|length > 0 %}
+            <table class="file-list" id="doc_lst">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Bytes</th>
+                        <th>Tipo</th>
+                        <th>Atualizado</th>
+                        <th>Sel</th>
+                        <th>Rem</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for docs_file in docs_files %}
+                    <tr>
+                        <td>{{ docs_file.name }}</td>
+                        <td style="text-align: right;">{{ docs_file.size }}</td>
+                        <td style="text-align: center;">{{ docs_file.content_type }}</td>
+                        <td style="text-align: center;">{{ docs_file.updated.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td style="text-align: center; height: 16px; width: 16px">
+                            <img class="check-icon" src="static/check_circle.png"
+                                style="width: 20px; height: 20px; object-fit: cover;">
+                        </td>
+                        <td style="text-align: center; height: 16px; width: 16px">
+                            <img class="delete-icon" src="static/trash-bin.png"
+                                style="width: 20px; height: 20px; object-fit: cover;" value="{{ loop.index }}">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
                 <p id="context_message" style="font-weight: bold;">
                     Nenhum documento encontrado. Use os botão Carregar documento acima para carregar um documento pro sistema.</p>
+        {% endif %}
     {% endif %}
-
-    <h2>Tarefas IA Cadastradas</h2>
+    {% if selected_doc %}
+        <h2>Selecione uma tarefa de IA</h2>
+    {% else %}
+        <h2>Tarefas IA Cadastradas</h2>
+    {% endif %}
     {% if ai_tasks|length > 0 %}
     <table class="file-list" id="ai_task_lst">
         <thead>
             <tr>
                 <th>Task Name</th>
+    {% if selected_doc %}
+                <th>Sel</th>
+    {% else %}
                 <th>Ver</th>
                 <th>Rem</th>
+    {% endif %}
             </tr>
         </thead>
         <tbody>
             {% for task in ai_tasks %}
             <tr>
                 <td>{{ task.task_name }}</td>
+    {% if selected_doc %}
+                <td style="text-align: center; height: 16px; width: 16px">
+                    <img class="check-icon" src="static/check_circle.png"
+                        style="width: 20px; height: 20px; object-fit: cover;" value="{{ loop.index }}">
+                </td>
+    {% else %}
                 <td style="text-align: center; height: 16px; width: 16px">
                     <img class="visual-icon" src="static/eye.png"
                         style="width: 20px; height: 20px; object-fit: cover;" value="{{ loop.index }}">
@@ -76,6 +104,7 @@
                     <img class="delete-icon" src="static/trash-bin.png"
                         style="width: 20px; height: 20px; object-fit: cover;" value="{{ loop.index }}">
                 </td>
+    {% endif %}
             </tr>
             {% endfor %}
         </tbody>
@@ -83,8 +112,8 @@
     {% else %}
         <p>Nenhuma tarefa encontrada.</p>
     {% endif %}
-
     </form>
+
     <script src="{{ url_for('static', filename='upload.js') }}"></script>
     <script>
         const load_Form = document.getElementById("load_Form");
@@ -133,31 +162,38 @@
         // Deleta o arquivo de contexto buja lata de lixo foi clicada
         if (doc_lst != null) {
             doc_lst.addEventListener("click", function (event) {
-                if (event.target.classList.contains("delete-icon")) {
-                    const table_line = event.target.parentElement.parentElement;
-                    const docName = table_line.cells[0].textContent;
+                const table_line = event.target.parentElement.parentElement;
+                const docName = table_line.cells[0].textContent;
+                document.getElementById("selected_item").value = docName;
+                if (event.target.classList.contains("check-icon")) {
+                    clicked_button.value = "select_doc_btn";
+                } else if (event.target.classList.contains("delete-icon")) {
                     response = confirm("Tem certeza que deseja deletar o documento \"" + docName + "\"?");
                     if (!response) return;
                     clicked_button.value = "delete_doc_btn";
-                    document.getElementById("item_to_delete").value = docName;
-                    load_Form.submit();
                 }
+                    load_Form.submit();
             });
         }
         const ai_task_lst = document.getElementById("ai_task_lst");
         // Deleta o arquivo de contexto buja lata de lixo foi clicada
         if (ai_task_lst != null) {
             ai_task_lst.addEventListener("click", function (event) {
-                if (event.target.classList.contains("delete-icon")) {
-                    const table_line = event.target.parentElement.parentElement;
-                    const docName = table_line.cells[0].textContent;
+                const table_line = event.target.parentElement.parentElement;
+                const docName = table_line.cells[0].textContent;
+                document.getElementById("selected_item").value = docName;
+                if (event.target.classList.contains("check-icon")) {
+                    clicked_button.value = "execute_task_btn";
+                } else if (event.target.classList.contains("visual-icon")) {
+                    clicked_button.value = "visualize_task_btn";
+                } else if(event.target.classList.contains("delete-icon")) {
                     response = confirm("Tem certeza que deseja deletar o documento \"" + docName + "\"?");
                     if (!response) return;
                     clicked_button.value = "delete_task_btn";
-                    document.getElementById("item_to_delete").value = docName;
-                    load_Form.submit();
                 }
+                load_Form.submit();
             });
-        }    </script>
+        }    
+    </script>
 </body>
 </html>
