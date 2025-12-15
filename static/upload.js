@@ -1,33 +1,42 @@
 
-function addAITask(taskName, command, str_output) {
-   const formData = new URLSearchParams();
+async function addAITask(taskName) {
+    const formData = new URLSearchParams();
     formData.append("task_name", taskName);
-    const response = fetch("/addAITask", {
+    const response = await fetch("/addAITask", {
         method: "POST",
         body: formData
     });
     if (!response.ok) {
-        console.error("Error saving AI task:", response.statusText);
-        alert("Erro ao salvar a AI task: " + taskName + "\n"+ response.statusText);
+        const errorText = await response.text();
+        console.error("Erro criando tarefa IA: ", response.statusText, errorText);
+        alert("Erro criando tarefa IA: " + taskName + "\n" + errorText);
         return false;
     }
+    await response.text();
     return true;
 }
-function saveAITask(taskName, command, str_output) {
+
+async function saveAITask(taskName, command, str_output) {
+    console.log("saveAITask")
+    console.log(taskName)
+    console.log(command)
+    console.log(str_output)
     const formData = new URLSearchParams();
     formData.append("task_name", taskName);
     formData.append("command", command);
     formData.append("str_output", str_output);
 
-    const response = fetch("/saveAITask", {
+    const response = await fetch("/saveAITask", {
         method: "POST",
         body: formData
     });
     if (!response.ok) {
-        console.error("Error saving AI task:", response.statusText);
-        alert("Erro ao salvar a AI task: " + taskName + "\n"+ response.statusText);
+        const errorText = await response.text();
+        console.error("Erro salvando tarefa IA: ", response.statusText);
+        alert("Erro salvando tarefa IA: " + taskName + "\n"+ response.statusText);
         return false;
     }
+    await response.text();
     return true;
 }
 

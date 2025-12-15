@@ -226,8 +226,8 @@
                 load_Form.submit();
             });
         }   
-
-        load_Form.addEventListener("submit", function (event) {
+        
+        load_Form.addEventListener("submit", async function (event) {
             event.preventDefault();
             clicked_button.value = event.submitter.name
             if (event.submitter.name == "upload_doc_btn") {
@@ -238,22 +238,24 @@
                 if (taskName == null || taskName == "") {
                     return;
                 }
-                if (addAITask(taskName))
+                if (await addAITask(taskName))
                 {
                     const model_name = slc_model_name ? slc_model_name.value : "";
-                    selected_item.value = model_name + ";"+ taskName + ";" + selected_doc_name;
+                    selected_item.value = model_name + ";'"+ taskName + "'';" + selected_doc_name;
                     clicked_button.value = "edit_task_btn";
                     load_Form.submit();
                 }
             }            
             else if (event.submitter.name == "save_task_btn") {
-                const taskName = "{{ taskName }}";
-                const command_input = document.createElement("command_input").value;
-                const str_output_content = document.createElement("str_output_content").value;
-                saveAITask(taskName, command_input, str_output_content);
-                //const model_name = slc_model_name ? slc_model_name.value : "";
-                //selected_item.value = model_name + ";{{ taskName }};" + selected_doc_name;
-                //load_Form.submit();
+                const taskName = "{{ task_name }}";
+                const command_input = document.getElementById("command_input").value;
+                const str_output_content = document.getElementById("str_output_content").value;
+                if (await saveAITask(taskName, command_input, str_output_content))
+                {
+                    //const model_name = slc_model_name ? slc_model_name.value : "";
+                    //selected_item.value = model_name + ";{{ taskName }};" + selected_doc_name;
+                    //load_Form.submit();
+                }
             }
             else {
                 load_Form.submit();

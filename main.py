@@ -15,6 +15,8 @@ from google.genai import types
 storage_client = storage.Client()
 db = firestore.Client()
 local_cred_file = os.environ.get("HOME") +"/.config/gcloud/gemini-app-sa.json"
+collection_name = u'ai_tasks'
+
 
 genai_client = genai.Client(
       vertexai=True,
@@ -47,12 +49,7 @@ def index():
             model_name, task_name, selected_doc = selected_item.split(";")
             command, str_output = getAITask(task_name)
             return render_template('index.html', docs_files=getDocFiles(selected_doc), ai_tasks=getAiTasks(), selected_doc=geSelectedDoc(selected_doc), task_name=task_name, command=command, str_output=str_output, edit=(clicked_button == "edit_task_btn"))
-
-        elif clicked_button == "save_task_btn": 
-            model_name, task_name, selected_doc = selected_item.split(";")
-            saveAITask(task_name,request.form["command_input"], request.form["str_output_content"])
-            return render_template('index.html', docs_files=getDocFiles(selected_doc), ai_tasks=getAiTasks(), selected_doc=geSelectedDoc(selected_doc))
-        
+       
         elif clicked_button == "select_doc_btn": 
             return render_template('index.html', ai_tasks=getAiTasks(), selected_doc=geSelectedDoc(selected_item))
         
@@ -114,7 +111,7 @@ def deleteDocFromBucket(doc_to_delete):
 
 def getAiTasks():
     print("METHOD: getAiTasks")
-    tasks_ref = db.collection(u'ai_tasks')
+    tasks_ref = db.collection(collection_name)
     docs = tasks_ref.stream()
     tasks = []
     for doc in docs:
@@ -125,7 +122,7 @@ def getAiTasks():
 
 def getAITask(task_name):
     print("METHOD: getAITask: "+ task_name)
-    ai_task = db.collection(u'ai_tasks').document(task_name).get()
+    ai_task = db.collection(collection_name).document(task_name).get()
     data = ai_task.to_dict()
     str_output = data.get('str_output')
     if isinstance(str_output, (dict, list)):
@@ -133,36 +130,45 @@ def getAITask(task_name):
     return data.get('command'), str_output
 
 @app.route("/addAITask", methods=["POST"])
-def addAITask(task_name):
+def addAITask():
+    task_name = request.form["task_name"]
     print(f"METHOD: addAITask: {task_name}")
     try:
-        doc_ref = db.collection(collection_name).document(task_name)
-        
-        # Dados a serem salvos (excluindo o nome se não quiser duplicar dentro do doc)
-        data = {
-            "command": task["command"],
-            "str_output": task["str_output"] # O Firestore aceita dicts como Maps/JSON
-        }
-    except Exception as e:
-        print(f"Error saving task '{task_name}': {e}")
+        ai_task_ref = db.collection(collection_name).document(task_name)
+        if ai_task_ref.get().exists:
+            return f"Erro: A tarefa '{task_name}' já existe.", 400
 
+        ai_task_ref.set({
+            "command": "Entre aqui as instruções para o modelo",
+            "str_output": {}
+        })
+        return "Sucesso", 200
+    except Exception as e:
+        print(e)
+        return f"Erro ao criar {task_name}: {e}", 500
+    
 @app.route("/saveAITask", methods=["POST"])
-def saveAITask(task_name, command, str_output):
-    print(f"METHOD: saveAITask: {task_name} {command} {str_output}")
+def saveAITask():
+    task_name = request.form["task_name"]
+    command = request.form["command"]
+    str_output = request.form["str_output"]
+    print(f"METHOD: saveAITask: T:{task_name} C:{command} S:{str_output}")
     try:
-        ai_task_ref = db.collection(u'ai_tasks').document(task_name)
+        ai_task_ref = db.collection(collection_name).document(task_name)
         ai_task_ref.set({
             'command': command,
             'str_output': str_output
         })
+        return "Sucesso", 200
     except Exception as e:
-        print(f"Error saving task '{task_name}': {e}")
+        print(e)
+        return f"Erro ao salvar {task_name}: {e}", 500
 
 def deleteTaskAI(task_to_delete):
     print("METHOD: deleteTaskAI: " + task_to_delete)
     if  task_to_delete == "": return
     try:
-        db.collection(u'ai_tasks').document(task_to_delete).delete()
+        db.collection(collection_name).document(task_to_delete).delete()
         print("Deleting " + task_to_delete)
     except Exception as e:
         print(f"Error deleting task '{task_to_delete}': {e}")
@@ -214,7 +220,7 @@ def executeAITask(model_name, task_name, selected_doc):
     print(f"METHOD: executeAITask: {model_name} - {task_name} - {selected_doc}")   
     try:
         blob = docs_bucket.blob(selected_doc)
-        ai_task = db.collection(u'ai_tasks').document(task_name).get()
+        ai_task = db.collection(collection_name).document(task_name).get()
         data = ai_task.to_dict()
         command = data.get('command')
         str_output = data.get('str_output')
