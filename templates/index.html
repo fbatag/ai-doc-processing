@@ -41,7 +41,6 @@
             </div>
         {% else %}
             <h2>Documentos carregados</h2>
-            <input type="submit" id="upload_doc_btn" name="upload_doc_btn" value="Carregar documento" class="btn-file">
             {% if docs_files|length > 0 %}
                 <table class="file-list" id="doc_lst">
                     <thead>
@@ -77,6 +76,7 @@
                     <p id="context_message" style="font-weight: bold;">
                         Nenhum documento encontrado. Use os botão Carregar documento acima para carregar um documento pro sistema.</p>
             {% endif %}
+            <input type="submit" id="upload_doc_btn" name="upload_doc_btn" value="Carregar documento" class="btn-file">
         {% endif %}
         {% if selected_doc %}
             <h2>Selecione uma tarefa de IA</h2>
@@ -91,7 +91,6 @@
         {% else %}
             <h2>Tarefas IA Cadastradas</h2>
         {% endif %}
-    <input type="submit" id="add_task_btn" name="add_task_btn" value="Adicionar tarefa" class="btn-file">
         {% if ai_tasks|length > 0 %}
         <table class="file-list" id="ai_task_lst">
             <thead>
@@ -134,7 +133,8 @@
         {% else %}
             <p>Nenhuma tarefa encontrada.</p>
         {% endif %}
-    <br><br>
+        <input type="submit" id="add_task_btn" name="add_task_btn" value="Adicionar tarefa" class="btn-file">
+        <br><br>
         {% if task_name %}
             <h2>{{task_name}}</h2>
             <div style="flex: 1; margin-bottom: 10px;">

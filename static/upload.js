@@ -37,6 +37,7 @@ async function saveAITask(taskName, command, str_output) {
         return false;
     }
     await response.text();
+    alert("Tarefa '"+ taskName + "' salva!!!");
     return true;
 }
 
