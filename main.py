@@ -157,7 +157,7 @@ def saveAITask():
         ai_task_ref = db.collection(collection_name).document(task_name)
         ai_task_ref.set({
             'command': command,
-            'str_output': str_output
+            'str_output': json.loads(str_output)
         })
         return "Sucesso", 200
     except Exception as e:

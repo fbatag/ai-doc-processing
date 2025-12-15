@@ -9,7 +9,7 @@ async function addAITask(taskName) {
     if (!response.ok) {
         const errorText = await response.text();
         console.error("Erro criando tarefa IA: ", response.statusText, errorText);
-        alert("Erro criando tarefa IA: " + taskName + "\n" + errorText);
+        alert("Erro criando tarefa IA: '" + taskName + "'\n" + errorText);
         return false;
     }
     await response.text();
