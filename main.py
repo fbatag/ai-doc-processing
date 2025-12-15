@@ -43,31 +43,28 @@ def index():
     try:
         clicked_button = request.form.get('clicked_button', "NOT_FOUND")
         #selected_doc = None
-        selected_item = request.form.get("selected_item","")
+        selected_item = request.form.get("selected_item",";;")
         print(f"clicked_button: {clicked_button} selected_item: {selected_item}")
-        if clicked_button == "visualize_task_btn" or clicked_button == "edit_task_btn":
-            model_name, task_name, selected_doc = selected_item.split(";")
-            command, str_output = getAITask(task_name)
-            return render_template('index.html', docs_files=getDocFiles(selected_doc), ai_tasks=getAiTasks(), selected_doc=geSelectedDoc(selected_doc), task_name=task_name, command=command, str_output=str_output, edit=(clicked_button == "edit_task_btn"))
-       
-        elif clicked_button == "select_doc_btn": 
-            return render_template('index.html', ai_tasks=getAiTasks(), selected_doc=geSelectedDoc(selected_item))
+        model_name, task_name, selected_doc = selected_item.split(";")
+
+        #if clicked_button == "select_doc_btn": 
         
+        if clicked_button == "return_btn":
+            return render_template('index.html', docs_files=getDocFiles(), ai_tasks=getAiTasks())
+        elif clicked_button == "delete_doc_btn":
+            deleteDocFromBucket(selected_doc)
+        elif clicked_button == "delete_task_btn": 
+            deleteTaskAI(task_name)
+
         elif clicked_button == "execute_task_btn":
-            model_name, task_name, selected_doc = selected_item.split(";")
             msg_processing = f"Executando a inferência da tarefa: <span style='float:right'>{task_name}</span><br><br>Para o documento: <span style='float:right'>{selected_doc}</span><br><br>Usando o modelo: <span style='float:right'>{model_name}</span><br><br><br><span style='display:block; text-align:center'>Aguarde alguns instantes...</span>"
             return render_template('index.html', msg_processing=msg_processing, selected_item=f"{model_name};{task_name};{selected_doc}", selected_doc="")
         
         elif clicked_button == "result_execute_task_btn":
-            model_name, task_name, selected_doc = selected_item.split(";")
             task_result = executeAITask(model_name, task_name, selected_doc)
             return render_template('index.html', ai_tasks=getAiTasks(), selected_doc=geSelectedDoc(selected_doc), task_result=task_result, choosen_model_name=model_name, executed_task_name=task_name)
-        
-        elif clicked_button == "delete_doc_btn":
-            deleteDocFromBucket(selected_item)
-        elif clicked_button == "delete_task_btn": 
-            deleteTaskAI(selected_item)
-        return render_template('index.html', docs_files=getDocFiles(), ai_tasks=getAiTasks(), selected_doc="")
+
+        return render_template('index.html', docs_files=getDocFiles(selected_doc), ai_tasks=getAiTasks(), selected_doc=geSelectedDoc(selected_doc))       
     except Exception as e:
         print(e)
         return f"Error: {e}", 500
@@ -120,14 +117,25 @@ def getAiTasks():
         tasks.append(task)
     return tasks
 
-def getAITask(task_name):
+@app.route("/getAITask", methods=["GET"])
+def getAITask(task_name=None):
+    is_internal_call = task_name is not None
+    if not task_name: task_name = request.args.get("task_name")
     print("METHOD: getAITask: "+ task_name)
     ai_task = db.collection(collection_name).document(task_name).get()
     data = ai_task.to_dict()
+    command = data.get('command')
     str_output = data.get('str_output')
     if isinstance(str_output, (dict, list)):
         str_output = json.dumps(str_output, indent=4)
-    return data.get('command'), str_output
+    
+    if is_internal_call:
+        return command, str_output
+        
+    return jsonify({
+        "command": command,
+        "str_output": str_output
+    })
 
 @app.route("/addAITask", methods=["POST"])
 def addAITask():
@@ -139,7 +147,7 @@ def addAITask():
             return f"Erro: A tarefa '{task_name}' já existe.", 400
 
         ai_task_ref.set({
-            "command": "Entre aqui as instruções para o modelo",
+            "command": "",
             "str_output": {}
         })
         return "Sucesso", 200

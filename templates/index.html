@@ -135,20 +135,19 @@
         {% endif %}
         <input type="submit" id="add_task_btn" name="add_task_btn" value="Adicionar tarefa" class="btn-file">
         <br><br>
-        {% if task_name %}
-            <h2>{{task_name}}</h2>
-            <div style="flex: 1; margin-bottom: 10px;">
-                <label for="command_input">Instrução:</label>
-                <textarea id="command_input" name="command_input" class="api-result" style="width: 100%; min-height: 100px; white-space: pre-wrap; background-color: white; color: black; padding: 10px;"{% if not edit %}readonly{% endif %}>{{ command }}</textarea>
+            <div id="div_task" style="display: none;">
+                <label for="lbl_task_name">Tarefa:</label>
+                <input type="text" id="lbl_task_name" name="lbl_task_name" style="width: 100%; padding: 5px; font-size: 1.17em; font-weight: bold;" readonly>
+                <div style="flex: 1; margin-bottom: 10px;">
+                    <label for="command_input">Instrução:</label>
+                    <textarea id="command_input" name="command_input" class="api-result" style="width: 100%; min-height: 100px; white-space: pre-wrap; background-color: white; color: black; padding: 10px;" readonly>{{ command }}</textarea>
+                </div>
+                <div style="flex: 1; margin-bottom: 10px;">
+                    <label for="str_output_content">Formato de saída:</label>
+                    <textarea id="str_output_content" name="str_output_content" class="api-result" style="width: 100%; min-height: 300px; white-space: pre-wrap; background-color: white; color: black; padding: 10px;">{{ str_output }}</textarea>
+                </div>
+                <input type="submit" id="save_task_btn" name="save_task_btn" value="Salvar tarefa" class="btn-file" style="display: none;">
             </div>
-            <div style="flex: 1; margin-bottom: 10px;">
-                <label for="str_output_content">Formato de saída:</label>
-                <textarea id="str_output_content" name="str_output_content" class="api-result" style="width: 100%; min-height: 300px; white-space: pre-wrap; background-color: white; color: black; padding: 10px;"{% if not edit %}readonly{% endif %}>{{ str_output }}</textarea>
-            </div>
-            {% if edit %}
-                <input type="submit" id="save_task_btn" name="save_task_btn" value="Salvar tarefa" class="btn-file">
-            {% endif %}
-        {% endif %}
     {% endif %}
 
     </form>
@@ -190,7 +189,7 @@
             doc_lst.addEventListener("click", function (event) {
                 const table_line = event.target.parentElement.parentElement;
                 const docName = table_line.cells[0].textContent;
-                selected_item.value = docName;
+                selected_item.value = ";;" + docName;
                 if (event.target.classList.contains("check-icon")) {
                     clicked_button.value = "select_doc_btn";
                 } else if (event.target.classList.contains("delete-icon")) {
@@ -204,28 +203,49 @@
         const slc_model_name = document.getElementById("slc_model_name");
         const ai_task_lst = document.getElementById("ai_task_lst");
         const selected_doc_name = "{{ selected_doc.name if selected_doc else '' }}"
+
+        const div_task = document.getElementById("div_task");
+        const lbl_task_name = document.getElementById("lbl_task_name");
+        const command_input = document.getElementById("command_input");
+        const str_output_content = document.getElementById("str_output_content");
+        const save_task_btn = document.getElementById("save_task_btn");
+        
+
         // Deleta o arquivo de contexto buja lata de lixo foi clicada
         if (ai_task_lst != null) {
-            ai_task_lst.addEventListener("click", function (event) {
+            ai_task_lst.addEventListener("click", async function (event) {
                 const table_line = event.target.parentElement.parentElement;
                 const taskName = table_line.cells[0].textContent;
                 const model_name = slc_model_name ? slc_model_name.value : "";
                 selected_item.value = model_name + ";" + taskName + ";" + selected_doc_name;
-                if (event.target.classList.contains("check-icon")) {
+                const targetClist = event.target.classList;
+                if (targetClist.contains("check-icon")) {
                     clicked_button.value = "execute_task_btn";
-                } else if (event.target.classList.contains("visual-icon")) {
-                    clicked_button.value = "visualize_task_btn";
-                } else if (event.target.classList.contains("edit-icon")) {
-                    clicked_button.value = "edit_task_btn";
+                    load_Form.submit();
+                } else if (targetClist.contains("visual-icon") || targetClist.contains("edit-icon")) {
+                    const ai_task = await getAITask(taskName);
+                    showAITask(taskName, ai_task.command, ai_task.str_output, targetClist.contains("edit-icon"));
                 } else if(event.target.classList.contains("delete-icon")) {
                     response = confirm("Tem certeza que deseja deletar a tarefa \"" + taskName + "\"?");
                     if (!response) return;
-                    selected_item.value = taskName;
+                    selected_item.value = model_name + ";" + taskName + ";" + selected_doc_name;
                     clicked_button.value = "delete_task_btn";
+                    load_Form.submit();
                 }
-                load_Form.submit();
             });
-        }   
+        }
+
+        function showAITask(taskName, command, str_output, edit)
+        {
+            lbl_task_name.value = taskName;
+            div_task.style.display = "block";
+            command_input.value = command;
+            str_output_content.value = str_output;
+            lbl_task_name.readOnly = !edit;
+            command_input.readOnly = !edit;
+            str_output_content.readOnly = !edit;
+            save_task_btn.style.display = edit ? "block": "None";
+        }
         
         load_Form.addEventListener("submit", async function (event) {
             event.preventDefault();
@@ -235,27 +255,16 @@
             }
             else if (event.submitter.name == "add_task_btn") {
                 const taskName = prompt("Digite o nome da nova tarefa");
-                if (taskName == null || taskName == "") {
-                    return;
-                }
-                if (await addAITask(taskName))
-                {
+                if (taskName && taskName != "" ) {
+                    await addAITask(taskName);
+                    //showAITask(taskName, "", "{}", true);
                     const model_name = slc_model_name ? slc_model_name.value : "";
-                    selected_item.value = model_name + ";'"+ taskName + "'';" + selected_doc_name;
-                    clicked_button.value = "edit_task_btn";
+                    selected_item.value = model_name + ";" + taskName + ";" + selected_doc_name;
                     load_Form.submit();
                 }
             }            
             else if (event.submitter.name == "save_task_btn") {
-                const taskName = "{{ task_name }}";
-                const command_input = document.getElementById("command_input").value;
-                const str_output_content = document.getElementById("str_output_content").value;
-                if (await saveAITask(taskName, command_input, str_output_content))
-                {
-                    //const model_name = slc_model_name ? slc_model_name.value : "";
-                    //selected_item.value = model_name + ";{{ taskName }};" + selected_doc_name;
-                    //load_Form.submit();
-                }
+                saveAITask(lbl_task_name.value, command_input.value, str_output_content.value);
             }
             else {
                 load_Form.submit();

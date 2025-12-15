@@ -1,3 +1,16 @@
+async function getAITask(taskName) {
+    const response = await fetch("/getAITask?" + new URLSearchParams({
+        task_name: taskName
+    }));
+    if (response.ok) {
+        const data = await response.json();
+        return data;
+    } else {
+        console.error("Erro ao obter a tarefa '" + taskName + "': " + response.statusText);
+        alert("Erro ao obter a tarefa '" + taskName + "': " + response.statusText);
+        return null;
+    }
+}
 
 async function addAITask(taskName) {
     const formData = new URLSearchParams();
