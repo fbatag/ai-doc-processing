@@ -1,3 +1,36 @@
+
+function addAITask(taskName, command, str_output) {
+   const formData = new URLSearchParams();
+    formData.append("task_name", taskName);
+    const response = fetch("/addAITask", {
+        method: "POST",
+        body: formData
+    });
+    if (!response.ok) {
+        console.error("Error saving AI task:", response.statusText);
+        alert("Erro ao salvar a AI task: " + taskName + "\n"+ response.statusText);
+        return false;
+    }
+    return true;
+}
+function saveAITask(taskName, command, str_output) {
+    const formData = new URLSearchParams();
+    formData.append("task_name", taskName);
+    formData.append("command", command);
+    formData.append("str_output", str_output);
+
+    const response = fetch("/saveAITask", {
+        method: "POST",
+        body: formData
+    });
+    if (!response.ok) {
+        console.error("Error saving AI task:", response.statusText);
+        alert("Erro ao salvar a AI task: " + taskName + "\n"+ response.statusText);
+        return false;
+    }
+    return true;
+}
+
 function UploadWithSignedUrl(file, callback) {
     if (file.size <= 5) 
     {
@@ -63,4 +96,26 @@ async function TestSignedUrl() {
     })
     const signedUrl = await response.text();
     alert(signedUrl);
+}
+
+async function executeAITask(model_name, task_name, selected_doc, callback) {
+    const response = await fetch("/executeAITask", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            model_name: model_name,
+            task_name: task_name,
+            selected_doc: selected_doc
+        })
+    });
+
+    if (response.ok) {
+        const result = await response.text();
+        callback(null, result);
+    } else {
+        const error = await response.text();
+        callback(error, null);
+    }
 }

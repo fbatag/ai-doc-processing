@@ -43,9 +43,15 @@ def index():
         #selected_doc = None
         selected_item = request.form.get("selected_item","")
         print(f"clicked_button: {clicked_button} selected_item: {selected_item}")
-        if clicked_button == "visualize_task_btn": 
-            command, str_output = getAITask(selected_item)
-            return render_template('index.html', docs_files=getDocFiles(), ai_tasks=getAiTasks(), task_name=selected_item, command=command, str_output=str_output, selected_doc="")
+        if clicked_button == "visualize_task_btn" or clicked_button == "edit_task_btn":
+            model_name, task_name, selected_doc = selected_item.split(";")
+            command, str_output = getAITask(task_name)
+            return render_template('index.html', docs_files=getDocFiles(selected_doc), ai_tasks=getAiTasks(), selected_doc=geSelectedDoc(selected_doc), task_name=task_name, command=command, str_output=str_output, edit=(clicked_button == "edit_task_btn"))
+
+        elif clicked_button == "save_task_btn": 
+            model_name, task_name, selected_doc = selected_item.split(";")
+            saveAITask(task_name,request.form["command_input"], request.form["str_output_content"])
+            return render_template('index.html', docs_files=getDocFiles(selected_doc), ai_tasks=getAiTasks(), selected_doc=geSelectedDoc(selected_doc))
         
         elif clicked_button == "select_doc_btn": 
             return render_template('index.html', ai_tasks=getAiTasks(), selected_doc=geSelectedDoc(selected_item))
@@ -71,7 +77,7 @@ def index():
 
 def geSelectedDoc(selected_doc_name):
     print("METHOD: getDocFiles: " + selected_doc_name)
-    if selected_doc_name == "": return
+    if not selected_doc_name or selected_doc_name == "": return
     sel_blob = docs_bucket.get_blob(selected_doc_name)
     if sel_blob:
         selected_doc = {
@@ -81,8 +87,9 @@ def geSelectedDoc(selected_doc_name):
             }
     return selected_doc
 
-def getDocFiles():
-    print("METHOD: getDocFiles")
+def getDocFiles(selected_doc = ""):
+    print(f"METHOD: getDocFiles {selected_doc}")
+    if selected_doc != "": return
     blobs = docs_bucket.list_blobs()
     files = []
     for blob in blobs:
@@ -124,6 +131,32 @@ def getAITask(task_name):
     if isinstance(str_output, (dict, list)):
         str_output = json.dumps(str_output, indent=4)
     return data.get('command'), str_output
+
+@app.route("/addAITask", methods=["POST"])
+def addAITask(task_name):
+    print(f"METHOD: addAITask: {task_name}")
+    try:
+        doc_ref = db.collection(collection_name).document(task_name)
+        
+        # Dados a serem salvos (excluindo o nome se não quiser duplicar dentro do doc)
+        data = {
+            "command": task["command"],
+            "str_output": task["str_output"] # O Firestore aceita dicts como Maps/JSON
+        }
+    except Exception as e:
+        print(f"Error saving task '{task_name}': {e}")
+
+@app.route("/saveAITask", methods=["POST"])
+def saveAITask(task_name, command, str_output):
+    print(f"METHOD: saveAITask: {task_name} {command} {str_output}")
+    try:
+        ai_task_ref = db.collection(u'ai_tasks').document(task_name)
+        ai_task_ref.set({
+            'command': command,
+            'str_output': str_output
+        })
+    except Exception as e:
+        print(f"Error saving task '{task_name}': {e}")
 
 def deleteTaskAI(task_to_delete):
     print("METHOD: deleteTaskAI: " + task_to_delete)

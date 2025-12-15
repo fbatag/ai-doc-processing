@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,141 +14,141 @@
         <br><h3>{{msg_processing|safe}}</h3>
         <input type="hidden" id="clicked_button" name="clicked_button" value="result_execute_task_btn">
         <input type="hidden" id="selected_item" name="selected_item" value="{{selected_item}}">
-    {% else %}
-    
+    {% else %}    
         <input type="hidden" id="clicked_button" name="clicked_button" value="">
         <input type="hidden" id="selected_item" name="selected_item" value="">
-
-    {% if selected_doc %}
-        <!--input type="hidden" id="selected_item" name="selected_item" value="{{ selected_doc.name }}"-->
-        <input type="submit" id="return_btn" name="return_btn" value="Retornar" class="btn-ctrl">
-        {% if task_result %}
-            <h3>Resposta do modelo: <span style="color: black;">{{choosen_model_name}}</span> Tarefa: <span style="color: black;">{{executed_task_name}}</span></h3>
-            <div style="flex: 1; overflow-x: auto;">
-                <pre class="api-result" style="white-space: pre-wrap; word-wrap: break-word; background-color: white; color: black;">
-                <br>{{ task_result }}
-                </pre>
-            </div>
-        {% endif %}
-        <br>
-        <h2>Documento: {{ selected_doc.name }}</h2>
-        <div id="image-container" style="margin-top: 20px; border: 1px solid #ddd; padding: 10px; background-color: #f9f9f9;">
-            {% if 'image' in selected_doc.content_type %}
-                <img src="{{ selected_doc.url }}" alt="{{ selected_doc.name }}" style="max-width: 100%; max-height: 800px; display: block; margin: 0 auto;">
-            {% elif 'pdf' in selected_doc.content_type %}
-                <embed src="{{ selected_doc.url }}" type="application/pdf" width="100%" height="800px" />
-            {% else %}
-                <p>Pré-visualização não disponível para este tipo de arquivo: {{ selected_doc.content_type }}</p>
-                <p><a href="{{ selected_doc.url }}" target="_blank">Baixar Arquivo</a></p>
+        {% if selected_doc %}
+            <input type="submit" id="return_btn" name="return_btn" value="Retornar" class="btn-ctrl">
+            {% if task_result %}
+                <h3>Resposta do modelo: <span style="color: black;">{{choosen_model_name}}</span> Tarefa: <span style="color: black;">{{executed_task_name}}</span></h3>
+                <div style="flex: 1; overflow-x: auto;">
+                    <pre class="api-result" style="white-space: pre-wrap; word-wrap: break-word; background-color: white; color: black;">
+                    <br>{{ task_result }}
+                    </pre>
+                </div>
             {% endif %}
-        </div>
-    {% else %}
-        <div class="upload-section">
+            <br>
+            <h2>Documento: {{ selected_doc.name }}</h2>
+            <div id="image-container" style="margin-top: 20px; border: 1px solid #ddd; padding: 10px; background-color: #f9f9f9;">
+                {% if 'image' in selected_doc.content_type %}
+                    <img src="{{ selected_doc.url }}" alt="{{ selected_doc.name }}" style="max-width: 100%; max-height: 800px; display: block; margin: 0 auto;">
+                {% elif 'pdf' in selected_doc.content_type %}
+                    <embed src="{{ selected_doc.url }}" type="application/pdf" width="100%" height="800px" />
+                {% else %}
+                    <p>Pré-visualização não disponível para este tipo de arquivo: {{ selected_doc.content_type }}</p>
+                    <p><a href="{{ selected_doc.url }}" target="_blank">Baixar Arquivo</a></p>
+                {% endif %}
+            </div>
+        {% else %}
+            <h2>Documentos carregados</h2>
             <input type="submit" id="upload_doc_btn" name="upload_doc_btn" value="Carregar documento" class="btn-file">
-        </div>
-        <h2>Documentos carregados</h2>
-        {% if docs_files|length > 0 %}
-            <table class="file-list" id="doc_lst">
-                <thead>
-                    <tr>
-                        <th>Nome</th>
-                        <th>Bytes</th>
-                        <th>Tipo</th>
-                        <th>Atualizado</th>
-                        <th>Sel</th>
-                        <th>Rem</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for docs_file in docs_files %}
-                    <tr>
-                        <td>{{ docs_file.name }}</td>
-                        <td style="text-align: right;">{{ docs_file.size }}</td>
-                        <td style="text-align: center;">{{ docs_file.content_type }}</td>
-                        <td style="text-align: center;">{{ docs_file.updated.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+            {% if docs_files|length > 0 %}
+                <table class="file-list" id="doc_lst">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Bytes</th>
+                            <th>Tipo</th>
+                            <th>Atualizado</th>
+                            <th>Sel</th>
+                            <th>Rem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for docs_file in docs_files %}
+                        <tr>
+                            <td>{{ docs_file.name }}</td>
+                            <td style="text-align: right;">{{ docs_file.size }}</td>
+                            <td style="text-align: center;">{{ docs_file.content_type }}</td>
+                            <td style="text-align: center;">{{ docs_file.updated.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td style="text-align: center; height: 16px; width: 16px">
+                                <img class="check-icon" src="static/check_circle.png"
+                                    style="width: 20px; height: 20px; object-fit: cover;">
+                            </td>
+                            <td style="text-align: center; height: 16px; width: 16px">
+                                <img class="delete-icon" src="static/trash-bin.png"
+                                    style="width: 20px; height: 20px; object-fit: cover;" value="{{ loop.index }}">
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                    <p id="context_message" style="font-weight: bold;">
+                        Nenhum documento encontrado. Use os botão Carregar documento acima para carregar um documento pro sistema.</p>
+            {% endif %}
+        {% endif %}
+        {% if selected_doc %}
+            <h2>Selecione uma tarefa de IA</h2>
+                <label style="color: white; font-weight: bold;" for="slc_model_name">Modelo:</label>
+                <br>
+                <select id="slc_model_name" name="slc_model_name">
+                    <option value="gemini-2.5-flash-lite">Gemini-2.5-flash-lite</option>
+                    <option value="gemini-2.5-flash">Gemini-2.5-flash</option>
+                    <option value="gemini-2.5-pro">Gemini-2.5-pro</option>
+                    <option value="gemini-3-pro-preview">Gemini-3-pro-preview</option>
+                </select>
+        {% else %}
+            <h2>Tarefas IA Cadastradas</h2>
+        {% endif %}
+    <input type="submit" id="add_task_btn" name="add_task_btn" value="Adicionar tarefa" class="btn-file">
+        {% if ai_tasks|length > 0 %}
+        <table class="file-list" id="ai_task_lst">
+            <thead>
+                <tr>
+                    <th>Task Name</th>
+            {% if selected_doc %}
+                    <th>Sel</th>
+            {% endif %}
+                    <th>Ver</th>
+                    <th>Edi</th>
+                    <th>Rem</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task in ai_tasks %}
+                <tr>
+                    <td>{{ task.task_name }}</td>
+                    {% if selected_doc %}
                         <td style="text-align: center; height: 16px; width: 16px">
                             <img class="check-icon" src="static/check_circle.png"
-                                style="width: 20px; height: 20px; object-fit: cover;">
-                        </td>
-                        <td style="text-align: center; height: 16px; width: 16px">
-                            <img class="delete-icon" src="static/trash-bin.png"
                                 style="width: 20px; height: 20px; object-fit: cover;" value="{{ loop.index }}">
                         </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                    {% endif %}
+                    <td style="text-align: center; height: 16px; width: 16px">
+                        <img class="visual-icon" src="static/eye.png"
+                            style="width: 20px; height: 20px; object-fit: cover;" value="{{ loop.index }}">
+                    </td>
+                    <td style="text-align: center; height: 16px; width: 16px">
+                        <img class="edit-icon" src="static/edit.png"
+                            style="width: 20px; height: 20px; object-fit: cover;" value="{{ loop.index }}">
+                    </td>
+                    <td style="text-align: center; height: 16px; width: 16px">
+                        <img class="delete-icon" src="static/trash-bin.png"
+                            style="width: 20px; height: 20px; object-fit: cover;" value="{{ loop.index }}">
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
         {% else %}
-                <p id="context_message" style="font-weight: bold;">
-                    Nenhum documento encontrado. Use os botão Carregar documento acima para carregar um documento pro sistema.</p>
+            <p>Nenhuma tarefa encontrada.</p>
         {% endif %}
-    {% endif %}
-    {% if selected_doc %}
-        <h2>Selecione uma tarefa de IA</h2>
-            <label style="color: white; font-weight: bold;" for="slc_model_name">Modelo:</label>
-            <br>
-            <select id="slc_model_name" name="slc_model_name">
-                <option value="gemini-2.5-flash-lite">Gemini-2.5-flash-lite</option>
-                <option value="gemini-2.5-flash">Gemini-2.5-flash</option>
-                <option value="gemini-2.5-pro">Gemini-2.5-pro</option>
-                <option value="gemini-3-pro-preview">Gemini-3-pro-preview</option>
-            </select>
-    {% else %}
-        <h2>Tarefas IA Cadastradas</h2>
-    {% endif %}
-    {% if ai_tasks|length > 0 %}
-    <table class="file-list" id="ai_task_lst">
-        <thead>
-            <tr>
-                <th>Task Name</th>
-    {% if selected_doc %}
-                <th>Sel</th>
-    {% else %}
-                <th>Ver</th>
-                <th>Rem</th>
-    {% endif %}
-            </tr>
-        </thead>
-        <tbody>
-            {% for task in ai_tasks %}
-            <tr>
-                <td>{{ task.task_name }}</td>
-    {% if selected_doc %}
-                <td style="text-align: center; height: 16px; width: 16px">
-                    <img class="check-icon" src="static/check_circle.png"
-                        style="width: 20px; height: 20px; object-fit: cover;" value="{{ loop.index }}">
-                </td>
-    {% else %}
-                <td style="text-align: center; height: 16px; width: 16px">
-                    <img class="visual-icon" src="static/eye.png"
-                        style="width: 20px; height: 20px; object-fit: cover;" value="{{ loop.index }}">
-                </td>
-                <td style="text-align: center; height: 16px; width: 16px">
-                    <img class="delete-icon" src="static/trash-bin.png"
-                        style="width: 20px; height: 20px; object-fit: cover;" value="{{ loop.index }}">
-                </td>
-    {% endif %}
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-        <p>Nenhuma tarefa encontrada.</p>
-    {% endif %}
     <br><br>
-    {% if task_name %}
-        <h2>{{task_name}}</h2>
-        <div style="flex: 1; overflow-x: auto;">
-            <pre class="api-result" style="white-space: pre-wrap; word-wrap: break-word; background-color: white; color: black;">
-            <br>{{ command }}
-            </pre>
-        </div>
-        <div style="flex: 1; overflow-x: auto;">
-            <pre class="api-result" style="white-space: pre-wrap; word-wrap: break-word; background-color: white; color: black;">
-            <br>{{ str_output }}
-            </pre>
-        </div>
-    {% endif %}
+        {% if task_name %}
+            <h2>{{task_name}}</h2>
+            <div style="flex: 1; margin-bottom: 10px;">
+                <label for="command_input">Instrução:</label>
+                <textarea id="command_input" name="command_input" class="api-result" style="width: 100%; min-height: 100px; white-space: pre-wrap; background-color: white; color: black; padding: 10px;"{% if not edit %}readonly{% endif %}>{{ command }}</textarea>
+            </div>
+            <div style="flex: 1; margin-bottom: 10px;">
+                <label for="str_output_content">Formato de saída:</label>
+                <textarea id="str_output_content" name="str_output_content" class="api-result" style="width: 100%; min-height: 300px; white-space: pre-wrap; background-color: white; color: black; padding: 10px;"{% if not edit %}readonly{% endif %}>{{ str_output }}</textarea>
+            </div>
+            {% if edit %}
+                <input type="submit" id="save_task_btn" name="save_task_btn" value="Salvar tarefa" class="btn-file">
+            {% endif %}
+        {% endif %}
     {% endif %}
 
     </form>
@@ -181,28 +182,15 @@
             }
         });
 
-        load_Form.addEventListener("submit", function (event) {
-            event.preventDefault();
-            clicked_button.value = event.submitter.name
-            if (event.submitter.name == "upload_doc_btn") {
-                 load_doc_file.click();
-            }
-            else if (event.submitter.name == "ctx_test_btn") {
-                console.log("TESTE");
-                TestSignedUrl();
-            }
-            else {
-                load_Form.submit();
-            }
-        });
 
+        const selected_item = document.getElementById("selected_item");
         const doc_lst = document.getElementById("doc_lst");
         // Deleta o arquivo de contexto buja lata de lixo foi clicada
         if (doc_lst != null) {
             doc_lst.addEventListener("click", function (event) {
                 const table_line = event.target.parentElement.parentElement;
                 const docName = table_line.cells[0].textContent;
-                document.getElementById("selected_item").value = docName;
+                selected_item.value = docName;
                 if (event.target.classList.contains("check-icon")) {
                     clicked_button.value = "select_doc_btn";
                 } else if (event.target.classList.contains("delete-icon")) {
@@ -210,30 +198,67 @@
                     if (!response) return;
                     clicked_button.value = "delete_doc_btn";
                 }
-                    load_Form.submit();
+                load_Form.submit();
             });
         }
         const slc_model_name = document.getElementById("slc_model_name");
         const ai_task_lst = document.getElementById("ai_task_lst");
+        const selected_doc_name = "{{ selected_doc.name if selected_doc else '' }}"
         // Deleta o arquivo de contexto buja lata de lixo foi clicada
         if (ai_task_lst != null) {
             ai_task_lst.addEventListener("click", function (event) {
                 const table_line = event.target.parentElement.parentElement;
                 const taskName = table_line.cells[0].textContent;
-                document.getElementById("selected_item").value = taskName;
+                const model_name = slc_model_name ? slc_model_name.value : "";
+                selected_item.value = model_name + ";" + taskName + ";" + selected_doc_name;
                 if (event.target.classList.contains("check-icon")) {
                     clicked_button.value = "execute_task_btn";
-                    document.getElementById("selected_item").value = slc_model_name.value + ";" + taskName + ";{{ selected_doc.name }}"
                 } else if (event.target.classList.contains("visual-icon")) {
                     clicked_button.value = "visualize_task_btn";
+                } else if (event.target.classList.contains("edit-icon")) {
+                    clicked_button.value = "edit_task_btn";
                 } else if(event.target.classList.contains("delete-icon")) {
                     response = confirm("Tem certeza que deseja deletar a tarefa \"" + taskName + "\"?");
                     if (!response) return;
+                    selected_item.value = taskName;
                     clicked_button.value = "delete_task_btn";
                 }
                 load_Form.submit();
             });
-        }    
+        }   
+
+        load_Form.addEventListener("submit", function (event) {
+            event.preventDefault();
+            clicked_button.value = event.submitter.name
+            if (event.submitter.name == "upload_doc_btn") {
+                 load_doc_file.click();
+            }
+            else if (event.submitter.name == "add_task_btn") {
+                const taskName = prompt("Digite o nome da nova tarefa");
+                if (taskName == null || taskName == "") {
+                    return;
+                }
+                if (addAITask(taskName))
+                {
+                    const model_name = slc_model_name ? slc_model_name.value : "";
+                    selected_item.value = model_name + ";"+ taskName + ";" + selected_doc_name;
+                    clicked_button.value = "edit_task_btn";
+                    load_Form.submit();
+                }
+            }            
+            else if (event.submitter.name == "save_task_btn") {
+                const taskName = "{{ taskName }}";
+                const command_input = document.createElement("command_input").value;
+                const str_output_content = document.createElement("str_output_content").value;
+                saveAITask(taskName, command_input, str_output_content);
+                //const model_name = slc_model_name ? slc_model_name.value : "";
+                //selected_item.value = model_name + ";{{ taskName }};" + selected_doc_name;
+                //load_Form.submit();
+            }
+            else {
+                load_Form.submit();
+            }
+        });
 
         var choosenModel = "{{ choosen_model_name }}";
         if (choosenModel != null && choosenModel != "") {
@@ -253,15 +278,7 @@
             console.log(clicked_button.value)
             load_Form.submit();
         }
-        function onFormLoaded() {
-            console.log("clicked_button.value ? result_execute_task_btn")
-            console.log(clicked_button.value)
-            if (clicked_button.value == "result_execute_task_btn")
-            {
-                //load_Form.submit();
-            }
-        }
-        
+
     </script>
 </body>
 </html>
