@@ -53,6 +53,7 @@ def index():
             return render_template('index.html', docs_files=getDocFiles(), ai_tasks=getAiTasks())
         elif clicked_button == "delete_doc_btn":
             deleteDocFromBucket(selected_doc)
+            selected_doc=""
         elif clicked_button == "delete_task_btn": 
             deleteTaskAI(task_name)
 
