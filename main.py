@@ -17,6 +17,7 @@ db = firestore.Client()
 local_cred_file = os.environ.get("HOME") +"/.config/gcloud/gemini-app-sa.json"
 collection_name = u'ai_tasks'
 
+print (storage_client.project)
 
 genai_client = genai.Client(
       vertexai=True,
@@ -234,10 +235,10 @@ def executeAITask(model_name, task_name, selected_doc):
         try:
             parsed_result = json.loads(result)
             return json.dumps(parsed_result, indent=4, ensure_ascii=False)
-        except Exception:
-            return result
+        except Exception as e:
+            return f"Erro ao parsera a resposta Model: {model_name} Tarefa: {task_name} Documento: {selected_doc}\nResposta{result}\nErro: {e}"
     except Exception as e:
-        return f"Erro ao executar Model: {model_name} Tarefa: {task_name} Documento: {selected_doc} Erro: {e}"
+        return f"Erro ao executar Model: {model_name} Tarefa: {task_name} Documento: {selected_doc}\nErro: {e}"
 
 def call_gemini(
       model: str,
