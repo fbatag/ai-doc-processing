@@ -135,19 +135,19 @@
         {% endif %}
         <input type="submit" id="add_task_btn" name="add_task_btn" value="Adicionar tarefa" class="btn-file">
         <br><br>
-            <div id="div_task" style="display: none;">
-                <label for="lbl_task_name">Tarefa:</label>
-                <input type="text" id="lbl_task_name" name="lbl_task_name" style="width: 100%; padding: 5px; font-size: 1.17em; font-weight: bold;" readonly>
-                <div style="flex: 1; margin-bottom: 10px;">
-                    <label for="command_input">Instrução:</label>
-                    <textarea id="command_input" name="command_input" class="api-result" style="width: 100%; min-height: 100px; white-space: pre-wrap; background-color: white; color: black; padding: 10px;" readonly>{{ command }}</textarea>
-                </div>
-                <div style="flex: 1; margin-bottom: 10px;">
-                    <label for="str_output_content">Formato de saída:</label>
-                    <textarea id="str_output_content" name="str_output_content" class="api-result" style="width: 100%; min-height: 300px; white-space: pre-wrap; background-color: white; color: black; padding: 10px;">{{ str_output }}</textarea>
-                </div>
-                <input type="submit" id="save_task_btn" name="save_task_btn" value="Salvar tarefa" class="btn-file" style="display: none;">
+        <div id="div_task" style="display: none;">
+            <label for="lbl_task_name">Tarefa:</label>
+            <input type="text" id="lbl_task_name" name="lbl_task_name" style="width: 100%; padding: 5px; font-size: 1.17em; font-weight: bold;" readonly>
+            <div style="flex: 1; margin-bottom: 10px;">
+                <label for="command_input">Instrução:</label>
+                <textarea id="command_input" name="command_input" class="api-result" style="width: 100%; min-height: 100px; white-space: pre-wrap; background-color: white; color: black; padding: 10px;" readonly>{{ command }}</textarea>
             </div>
+            <div style="flex: 1; margin-bottom: 10px;">
+                <label for="str_output_content">Formato de saída:</label>
+                <textarea id="str_output_content" name="str_output_content" class="api-result" style="width: 100%; min-height: 300px; white-space: pre-wrap; background-color: white; color: black; padding: 10px;">{{ str_output }}</textarea>
+            </div>
+            <input type="submit" id="save_task_btn" name="save_task_btn" value="Salvar tarefa" class="btn-file" style="display: none;">
+        </div>
     {% endif %}
 
     </form>
@@ -251,7 +251,8 @@
             event.preventDefault();
             clicked_button.value = event.submitter.name
             if (event.submitter.name == "upload_doc_btn") {
-                 load_doc_file.click();
+                selected_item.value =  ";;";
+                load_doc_file.click();
             }
             else if (event.submitter.name == "add_task_btn") {
                 const taskName = prompt("Digite o nome da nova tarefa");
