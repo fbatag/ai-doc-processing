@@ -131,11 +131,14 @@ def getAITask(task_name=None):
     
     if is_internal_call:
         return command, str_output
-        
-    return jsonify({
+
+    data = {
         "command": command,
         "str_output": str_output
-    })
+    }   
+    #print(data)
+    return data
+    #return jsonify(data)
 
 @app.route("/addAITask", methods=["POST"])
 def addAITask():

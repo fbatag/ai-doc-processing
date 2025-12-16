@@ -16,7 +16,7 @@
         <input type="hidden" id="selected_item" name="selected_item" value="{{selected_item}}">
     {% else %}    
         <input type="hidden" id="clicked_button" name="clicked_button" value="">
-        <input type="hidden" id="selected_item" name="selected_item" value="">
+        <input type="hidden" id="selected_item" name="selected_item" value=";;">
         {% if selected_doc %}
             <input type="submit" id="return_btn" name="return_btn" value="Retornar" class="btn-ctrl">
             {% if task_result %}
@@ -251,7 +251,6 @@
             event.preventDefault();
             clicked_button.value = event.submitter.name
             if (event.submitter.name == "upload_doc_btn") {
-                selected_item.value =  ";;";
                 load_doc_file.click();
             }
             else if (event.submitter.name == "add_task_btn") {
