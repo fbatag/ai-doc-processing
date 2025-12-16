@@ -119,27 +119,21 @@ def getAiTasks():
     return tasks
 
 @app.route("/getAITask", methods=["GET"])
-def getAITask(task_name=None):
-    is_internal_call = task_name is not None
-    if not task_name: task_name = request.args.get("task_name")
+def getAITask():
+    task_name = request.args.get("task_name")
     print("METHOD: getAITask: "+ task_name)
     ai_task = db.collection(collection_name).document(task_name).get()
     data = ai_task.to_dict()
     command = data.get('command')
     str_output = data.get('str_output')
-    if isinstance(str_output, (dict, list)):
-        str_output = json.dumps(str_output, indent=4)
+    #if isinstance(str_output, (dict, list)):
+    #    str_output = json.dumps(str_output, ensure_ascii=False, indent=4)
     
-    if is_internal_call:
-        return command, str_output
-
     data = {
         "command": command,
         "str_output": str_output
     }   
-    #print(data)
     return data
-    #return jsonify(data)
 
 @app.route("/addAITask", methods=["POST"])
 def addAITask():

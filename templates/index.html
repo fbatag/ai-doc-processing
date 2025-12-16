@@ -240,7 +240,8 @@
             lbl_task_name.value = taskName;
             div_task.style.display = "block";
             command_input.value = command;
-            str_output_content.value = str_output;
+            //str_output_content.value = str_output;
+            str_output_content.value = JSON.stringify(str_output, null, 4);
             lbl_task_name.readOnly = !edit;
             command_input.readOnly = !edit;
             str_output_content.readOnly = !edit;

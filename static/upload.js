@@ -46,7 +46,7 @@ async function saveAITask(taskName, command, str_output) {
     if (!response.ok) {
         const errorText = await response.text();
         console.error("Erro salvando tarefa IA: ", response.statusText);
-        alert("Erro salvando tarefa IA: " + taskName + "\n"+ response.statusText);
+        alert("Erro salvando tarefa IA: " + taskName + "\n"+ errorText);
         return false;
     }
     await response.text();
