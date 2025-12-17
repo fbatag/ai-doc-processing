@@ -46,4 +46,4 @@ gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:$SA_D
 gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:$SA_DEPLOY --role roles/cloudbuild.builds.editor
 gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:$SA_DEPLOY --role roles/run.builder
 
-gcloud run deploy $SERVICE_NAME --source . --region $REGION --service-account $SERVICE_ACCOUNT --allow-unauthenticated --timeout=1200s
+gcloud run deploy $SERVICE_NAME --source . --project $PROJECT_ID --region $REGION --service-account $SERVICE_ACCOUNT --allow-unauthenticated --timeout=1200s
